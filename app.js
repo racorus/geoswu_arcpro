@@ -1,8 +1,10 @@
 // Replace this value with the /exec URL from your deployed Apps Script web app.
-const API_URL = "https://script.google.com/macros/s/AKfycbx03uUTn5J2jVvLN8iTN1O0EKuXote8tbbATbJsDz_1XBixFoCR8Y94PxXaR5RzZC37/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycby-6tN0sVaLYFI2JQ1NV5eS-nRwoCg_arMmblpl2EqPXKP-cBfVYehKbVRE74rRdLZI/exec";
+ 
 // OAuth 2.0 Web Client ID from Google Cloud Console. Must match GOOGLE_CLIENT_ID
 // in Code.gs exactly (see README: "Require Google Sign-In").
 const GOOGLE_CLIENT_ID = "448738110825-17ib3hm7tehlb4r74jlumkbjneb0cm6s.apps.googleusercontent.com";
+
 // Only accounts on this domain may sign in. This is a UX hint only - the real
 // enforcement happens server-side in Code.gs's CONFIG.ALLOWED_EMAIL_DOMAIN.
 const ALLOWED_EMAIL_DOMAIN = "g.swu.ac.th";
