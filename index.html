@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6b1f35">
+    <meta name="description" content="Reserve a number from your year group's independent number pool.">
+    <title>Student Number Selection</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="brand-mark" aria-hidden="true">S</div>
+      <div>
+        <p class="eyebrow">Student Services</p>
+        <h1>Student Number Selection</h1>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <div id="statusMessage" class="status-message" role="status" aria-live="polite" hidden></div>
+
+      <section id="entryStep" class="card" aria-labelledby="entryTitle">
+        <div class="step-label">Step 1 of 3</div>
+        <h2 id="entryTitle">Enter your Student ID</h2>
+        <p class="muted">Use your 11-digit Student ID. Your year will be detected automatically.</p>
+
+        <form id="studentForm" novalidate>
+          <label for="studentId">Student ID</label>
+          <input
+            id="studentId"
+            name="studentId"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            maxlength="11"
+            pattern="[0-9]{11}"
+            placeholder="e.g. 68123456789"
+            aria-describedby="studentIdHint"
+            required
+          >
+          <p id="studentIdHint" class="field-hint">Must begin with 68, 67, or 66.</p>
+          <button id="continueButton" class="button button-primary button-full" type="submit">
+            Continue
+          </button>
+        </form>
+
+        <button id="openCheckButton" class="text-button" type="button">Check my selection</button>
+        <p class="privacy-note">If your Apps Script deployment provides your signed-in Google email, it is recorded automatically.</p>
+      </section>
+
+      <section id="selectionStep" class="card" aria-labelledby="selectionTitle" hidden>
+        <div class="step-header">
+          <div>
+            <div class="step-label">Step 2 of 3</div>
+            <h2 id="selectionTitle">Choose your number</h2>
+          </div>
+          <button id="changeStudentButton" class="text-button compact" type="button">Change ID</button>
+        </div>
+
+        <dl class="identity-summary">
+          <div>
+            <dt>Student ID</dt>
+            <dd id="summaryStudentId">—</dd>
+          </div>
+          <div>
+            <dt>Detected year</dt>
+            <dd id="summaryYear">—</dd>
+          </div>
+        </dl>
+
+        <div class="availability-row">
+          <p><strong id="availabilityCount">—</strong> numbers available</p>
+          <button id="refreshButton" class="icon-button" type="button" aria-label="Refresh availability">Refresh</button>
+        </div>
+
+        <div class="legend" aria-label="Number status legend">
+          <span><i class="legend-dot available"></i>Available</span>
+          <span><i class="legend-dot taken"></i>Taken</span>
+          <span><i class="legend-dot selected"></i>Selected</span>
+        </div>
+
+        <div id="numberGrid" class="number-grid" aria-label="Available numbers"></div>
+
+        <div class="selection-footer">
+          <p>Selected number <strong id="selectedNumber">None</strong></p>
+          <button id="reviewButton" class="button button-primary" type="button" disabled>Review selection</button>
+        </div>
+      </section>
+
+      <section id="successStep" class="card success-card" aria-labelledby="successTitle" hidden>
+        <div class="success-icon" aria-hidden="true">✓</div>
+        <p class="eyebrow">Reservation complete</p>
+        <h2 id="successTitle">Selection confirmed</h2>
+        <p class="muted">Please keep this information for your reference.</p>
+        <dl class="receipt">
+          <div><dt>Student ID</dt><dd id="successStudentId">—</dd></div>
+          <div><dt>Year</dt><dd id="successYear">—</dd></div>
+          <div class="number-receipt"><dt>Your number</dt><dd id="successNumber">—</dd></div>
+        </dl>
+      </section>
+    </main>
+
+    <dialog id="confirmDialog" class="dialog">
+      <form method="dialog">
+        <p class="eyebrow">Step 3 of 3</p>
+        <h2>Please confirm your selection</h2>
+        <dl class="confirmation-list">
+          <div><dt>Student ID</dt><dd id="confirmStudentId">—</dd></div>
+          <div><dt>Year</dt><dd id="confirmYear">—</dd></div>
+          <div><dt>Selected number</dt><dd id="confirmNumber">—</dd></div>
+        </dl>
+        <div class="dialog-actions">
+          <button id="backButton" class="button button-secondary" value="cancel" type="submit">Back</button>
+          <button id="confirmButton" class="button button-primary" value="default" type="button">Confirm selection</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="checkDialog" class="dialog">
+      <form id="checkForm" method="dialog" novalidate>
+        <div class="dialog-title-row">
+          <h2>Check my selection</h2>
+          <button class="close-button" value="cancel" type="submit" aria-label="Close">×</button>
+        </div>
+        <label for="checkStudentId">Student ID</label>
+        <input id="checkStudentId" type="text" inputmode="numeric" maxlength="11" placeholder="11-digit Student ID" required>
+        <button id="checkButton" class="button button-primary button-full" type="button">Check selection</button>
+        <div id="checkResult" class="check-result" aria-live="polite" hidden></div>
+      </form>
+    </dialog>
+
+    <noscript>This application requires JavaScript to load number availability.</noscript>
+  </body>
+</html>
