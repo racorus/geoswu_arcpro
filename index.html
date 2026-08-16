@@ -7,6 +7,7 @@
     <meta name="description" content="Reserve a number from your year group's independent number pool.">
     <title>Student Number Selection</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -16,13 +17,24 @@
         <p class="eyebrow">Student Services</p>
         <h1>Student Number Selection</h1>
       </div>
+      <div id="accountBar" class="account-bar" hidden>
+        <span>Signed in as <strong id="accountEmail">—</strong></span>
+        <button id="signOutButton" class="text-button compact" type="button">Sign out</button>
+      </div>
     </header>
 
     <main class="page-shell">
       <div id="statusMessage" class="status-message" role="status" aria-live="polite" hidden></div>
 
-      <section id="entryStep" class="card" aria-labelledby="entryTitle">
-        <div class="step-label">Step 1 of 3</div>
+      <section id="signInStep" class="card" aria-labelledby="signInTitle">
+        <div class="step-label">Step 1 of 4</div>
+        <h2 id="signInTitle">Sign in to continue</h2>
+        <p class="muted">Sign in with your SWU Google account to select a number.</p>
+        <div id="googleSignInButton" class="google-signin-button"></div>
+      </section>
+
+      <section id="entryStep" class="card" aria-labelledby="entryTitle" hidden>
+        <div class="step-label">Step 2 of 4</div>
         <h2 id="entryTitle">Enter your Student ID</h2>
         <p class="muted">Use your 11-digit Student ID. Your year will be detected automatically.</p>
 
@@ -47,13 +59,13 @@
         </form>
 
         <button id="openCheckButton" class="text-button" type="button">Check my selection</button>
-        <p class="privacy-note">If your Apps Script deployment provides your signed-in Google email, it is recorded automatically.</p>
+        <p class="privacy-note">Your signed-in Google email is recorded with your reservation.</p>
       </section>
 
       <section id="selectionStep" class="card" aria-labelledby="selectionTitle" hidden>
         <div class="step-header">
           <div>
-            <div class="step-label">Step 2 of 3</div>
+            <div class="step-label">Step 3 of 4</div>
             <h2 id="selectionTitle">Choose your number</h2>
           </div>
           <button id="changeStudentButton" class="text-button compact" type="button">Change ID</button>
@@ -104,7 +116,7 @@
 
     <dialog id="confirmDialog" class="dialog">
       <form method="dialog">
-        <p class="eyebrow">Step 3 of 3</p>
+        <p class="eyebrow">Step 4 of 4</p>
         <h2>Please confirm your selection</h2>
         <dl class="confirmation-list">
           <div><dt>Student ID</dt><dd id="confirmStudentId">—</dd></div>

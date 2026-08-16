@@ -1,8 +1,16 @@
 // Replace this value with the /exec URL from your deployed Apps Script web app.
 const API_URL = "https://script.google.com/macros/s/AKfycbx03uUTn5J2jVvLN8iTN1O0EKuXote8tbbATbJsDz_1XBixFoCR8Y94PxXaR5RzZC37/exec";
+// OAuth 2.0 Web Client ID from Google Cloud Console. Must match GOOGLE_CLIENT_ID
+// in Code.gs exactly (see README: "Require Google Sign-In").
+const GOOGLE_CLIENT_ID = "448738110825-17ib3hm7tehlb4r74jlumkbjneb0cm6s.apps.googleusercontent.com";
+// Only accounts on this domain may sign in. This is a UX hint only - the real
+// enforcement happens server-side in Code.gs's CONFIG.ALLOWED_EMAIL_DOMAIN.
+const ALLOWED_EMAIL_DOMAIN = "g.swu.ac.th";
 const AVAILABILITY_REFRESH_MS = 45000;
 
 const state = {
+  googleIdToken: null,
+  googleEmail: "",
   studentId: "",
   year: "",
   selectedNumber: null,
@@ -16,7 +24,8 @@ const elements = {};
 
 document.addEventListener("DOMContentLoaded", () => {
   [
-    "statusMessage", "entryStep", "studentForm", "studentId", "continueButton",
+    "statusMessage", "accountBar", "accountEmail", "signOutButton", "signInStep",
+    "googleSignInButton", "entryStep", "studentForm", "studentId", "continueButton",
     "openCheckButton", "selectionStep", "summaryStudentId", "summaryYear",
     "availabilityCount", "numberGrid", "selectedNumber", "reviewButton",
     "changeStudentButton", "refreshButton", "successStep", "successStudentId",
@@ -26,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ].forEach((id) => { elements[id] = document.getElementById(id); });
 
   bindEvents();
+  initGoogleSignIn();
 });
 
 function bindEvents() {
@@ -45,7 +55,92 @@ function bindEvents() {
   elements.openCheckButton.addEventListener("click", openCheckDialog);
   elements.checkButton.addEventListener("click", checkExistingReservation);
   elements.checkForm.addEventListener("submit", (event) => event.preventDefault());
+  elements.signOutButton.addEventListener("click", signOut);
   window.addEventListener("beforeunload", stopRefreshTimer);
+}
+
+function isGoogleClientConfigured() {
+  return /^[\w-]+\.apps\.googleusercontent\.com$/.test(GOOGLE_CLIENT_ID);
+}
+
+function initGoogleSignIn() {
+  if (!isGoogleClientConfigured()) {
+    showStatus("Google Sign-In has not been configured yet (set GOOGLE_CLIENT_ID in app.js).", "error");
+    return;
+  }
+  if (!window.google || !google.accounts || !google.accounts.id) {
+    showStatus("Could not load Google Sign-In. Check your connection and reload the page.", "error");
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential,
+    hd: ALLOWED_EMAIL_DOMAIN || undefined
+  });
+  google.accounts.id.renderButton(elements.googleSignInButton, {
+    theme: "outline",
+    size: "large",
+    width: 280,
+    text: "signin_with"
+  });
+}
+
+// Decodes the JWT payload for display/UX purposes only (e.g. showing the
+// email, catching the wrong domain early). This is NOT signature-verified -
+// Code.gs independently verifies the raw token before ever writing a
+// reservation, so nothing here is trusted for security.
+function decodeJwtPayload(token) {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0"))
+        .join("")
+    );
+    return JSON.parse(json);
+  } catch (error) {
+    return null;
+  }
+}
+
+function handleGoogleCredential(response) {
+  const payload = decodeJwtPayload(response.credential);
+  const email = payload && payload.email ? String(payload.email).toLowerCase().trim() : "";
+  if (!email) {
+    showStatus("Could not read your Google account. Please try signing in again.", "error");
+    return;
+  }
+  if (ALLOWED_EMAIL_DOMAIN && !email.endsWith("@" + ALLOWED_EMAIL_DOMAIN.toLowerCase())) {
+    showStatus(`Please sign in with your @${ALLOWED_EMAIL_DOMAIN} account.`, "error");
+    return;
+  }
+
+  state.googleIdToken = response.credential;
+  state.googleEmail = email;
+  elements.accountEmail.textContent = email;
+  elements.accountBar.hidden = false;
+  showOnly(elements.entryStep);
+  elements.studentId.focus();
+}
+
+function signOut() {
+  stopRefreshTimer();
+  state.googleIdToken = null;
+  state.googleEmail = "";
+  state.studentId = "";
+  state.year = "";
+  state.selectedNumber = null;
+  state.taken = new Set();
+  state.offered = [];
+  state.reservationComplete = false;
+  elements.numberGrid.innerHTML = "";
+  elements.accountBar.hidden = true;
+  if (window.google && google.accounts && google.accounts.id) {
+    google.accounts.id.disableAutoSelect();
+  }
+  showOnly(elements.signInStep);
 }
 
 // Rebuilds the grid to show only the numbers the backend actually offers.
@@ -71,6 +166,10 @@ function offeredFromAvailability(data) {
 
 async function handleContinue(event) {
   event.preventDefault();
+  if (!state.googleIdToken) {
+    showOnly(elements.signInStep);
+    return;
+  }
   const studentId = elements.studentId.value.trim();
   const validation = validateStudentId(studentId);
   if (!validation.valid) {
@@ -154,10 +253,13 @@ async function submitReservation() {
   elements.backButton.disabled = true;
 
   try {
+    if (!state.googleIdToken) throw { error: "MISSING_GOOGLE_TOKEN", message: "Please sign in with your Google account first." };
+
     const data = await apiPost({
       action: "reserve",
       studentId: state.studentId,
-      number: state.selectedNumber
+      number: state.selectedNumber,
+      idToken: state.googleIdToken
     });
     if (!data.success) throw data;
 
@@ -177,6 +279,9 @@ async function submitReservation() {
     } else if (error.error === "ALREADY_RESERVED") {
       showStatus(error.message || "You have already selected a number.", "info");
       await refreshAvailability(false);
+    } else if (["MISSING_GOOGLE_TOKEN", "INVALID_GOOGLE_TOKEN", "WRONG_EMAIL_DOMAIN"].includes(error.error)) {
+      showStatus(error.message || "Your Google sign-in has expired. Please sign in again.", "error");
+      signOut();
     } else {
       showStatus(error.message || "The reservation could not be completed. Please try again.", "error");
     }
@@ -291,7 +396,7 @@ function assertConfigured() {
 }
 
 function showOnly(activeStep) {
-  [elements.entryStep, elements.selectionStep, elements.successStep].forEach((step) => {
+  [elements.signInStep, elements.entryStep, elements.selectionStep, elements.successStep].forEach((step) => {
     step.hidden = step !== activeStep;
   });
   hideStatus();

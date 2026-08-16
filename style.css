@@ -34,10 +34,30 @@ button:disabled { cursor: not-allowed; }
 .site-header {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 14px;
   width: min(100% - 32px, 760px);
   margin: 0 auto;
   padding: 30px 0 20px;
+}
+
+.account-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--brand-soft);
+  font-size: .84rem;
+}
+.account-bar .text-button.compact { text-decoration: underline; }
+
+.google-signin-button {
+  display: flex;
+  justify-content: center;
+  margin-top: 22px;
 }
 
 .brand-mark {
