@@ -192,12 +192,13 @@ async function handleContinue(event) {
   hideStatus();
   try {
     assertConfigured();
-    const data = await apiGet("availability", { studentId });
+    const data = await apiGet("availability", { studentId, idToken: state.googleIdToken });
     if (!data.success) throw data;
 
     if (data.existingReservation) {
       showStatus(
-        `You have already selected Number ${data.existingReservation.number} for ${data.existingReservation.year}.`,
+        `Your account has already selected a number. Student ID: ${data.existingReservation.studentId}, `
+          + `Year: ${data.existingReservation.year}, Number: ${data.existingReservation.number}.`,
         "info"
       );
       return;
@@ -213,7 +214,12 @@ async function handleContinue(event) {
     showOnly(elements.selectionStep);
     startRefreshTimer();
   } catch (error) {
-    showStatus(error.message || "Could not load availability. Please try again.", "error");
+    if (["MISSING_GOOGLE_TOKEN", "INVALID_GOOGLE_TOKEN", "WRONG_EMAIL_DOMAIN"].includes(error.error)) {
+      showStatus(error.message || "Your Google sign-in has expired. Please sign in again.", "error");
+      signOut();
+    } else {
+      showStatus(error.message || "Could not load availability. Please try again.", "error");
+    }
   } finally {
     setButtonLoading(elements.continueButton, false);
   }
@@ -305,7 +311,7 @@ async function refreshAvailability(announce) {
   if (!state.studentId || state.reservationComplete) return;
   elements.refreshButton.disabled = true;
   try {
-    const data = await apiGet("availability", { studentId: state.studentId });
+    const data = await apiGet("availability", { studentId: state.studentId, idToken: state.googleIdToken });
     if (!data.success) throw data;
     const newTaken = new Set(data.taken || []);
     const newOffered = offeredFromAvailability(data);
@@ -330,7 +336,12 @@ async function refreshAvailability(announce) {
     }
     renderNumberGrid();
   } catch (error) {
-    if (announce) showStatus(error.message || "Could not refresh availability.", "error");
+    if (["MISSING_GOOGLE_TOKEN", "INVALID_GOOGLE_TOKEN", "WRONG_EMAIL_DOMAIN"].includes(error.error)) {
+      showStatus(error.message || "Your Google sign-in has expired. Please sign in again.", "error");
+      signOut();
+    } else if (announce) {
+      showStatus(error.message || "Could not refresh availability.", "error");
+    }
   } finally {
     elements.refreshButton.disabled = false;
   }
