@@ -35,8 +35,18 @@ document.addEventListener("DOMContentLoaded", () => {
   ].forEach((id) => { elements[id] = document.getElementById(id); });
 
   bindEvents();
-  initGoogleSignIn();
+  window.__domReady = true;
+  tryInitGoogleSignIn();
 });
+
+// The GSI <script> tag is async, so it can finish loading either before or
+// after DOMContentLoaded - there's no fixed order. Only start once both have
+// happened, whichever arrives second, so the sign-in button never silently
+// fails to render because of a load-order race.
+function tryInitGoogleSignIn() {
+  if (window.__domReady && window.__googleLibraryLoaded) initGoogleSignIn();
+}
+window.__onGoogleLibraryLoaded = tryInitGoogleSignIn;
 
 function bindEvents() {
   elements.studentForm.addEventListener("submit", handleContinue);
