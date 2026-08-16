@@ -7,7 +7,8 @@ const GOOGLE_CLIENT_ID = "448738110825-17ib3hm7tehlb4r74jlumkbjneb0cm6s.apps.goo
 
 // Only accounts on this domain may sign in. This is a UX hint only - the real
 // enforcement happens server-side in Code.gs's CONFIG.ALLOWED_EMAIL_DOMAIN.
-const ALLOWED_EMAIL_DOMAIN = "g.swu.ac.th";
+//const ALLOWED_EMAIL_DOMAIN = "g.swu.ac.th";
+const ALLOWED_EMAIL_DOMAIN = "";
 const AVAILABILITY_REFRESH_MS = 45000;
 
 const state = {
